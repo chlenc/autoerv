@@ -26,6 +26,9 @@ module.exports = {
         request_location: true
     },
     goToHome: 'Главное меню 🏠',
-
+    askData: {
+        text : 'Ввести данные',
+        request_location: true
+    }
 
 }

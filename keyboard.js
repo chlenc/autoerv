@@ -59,6 +59,42 @@ module.exports = {
         }
     },
     getPassengerEndKey(pass, driv, mark) {
+        // var stars = [];
+        // var star;
+        // for (var i = 1; i <= 5; i++) {
+        //     star = '☆';
+        //     if (i <= mark)
+        //         star = '⭐';
+        //     stars.push({
+        //         text: star,
+        //         callback_data: JSON.stringify({
+        //             type: 'mark',
+        //             mark: i,
+        //             per: 'pass',
+        //             // from: pass,
+        //             to: driv
+        //         })
+        //     })
+        // }
+        return {
+            reply_markup: {
+                inline_keyboard: [
+                    // stars,
+                    [{
+                        text: kb.call_a_taxi.cancel,
+                        callback_data: JSON.stringify({
+                            type: 'revoke',
+                            id: pass
+                            // from: pass,
+                            // to: driv
+
+                        })
+                    }]
+                ]
+            }
+        }
+    },
+    getPassengerStars(pass, driv, mark) {
         var stars = [];
         var star;
         for (var i = 1; i <= 5; i++) {
@@ -77,45 +113,42 @@ module.exports = {
             })
         }
         return {
-            reply_markup: {
                 inline_keyboard: [
                     stars,
                     [{
-                        text: kb.call_a_taxi.cancel,
+                        text: 'Оценить',
                         callback_data: JSON.stringify({
-                            type: 'revoke',
-                            id: pass
-                            // from: pass,
-                            // to: driv
-
+                            type:'sndMark',
+                            mark: mark,
+                            id: driv,
+                            per: 'pass'
                         })
                     }]
                 ]
-            }
         }
     },
     getDriverEndKey(pass, driv, mark) {
-        var stars = [];
-        var star;
-        for (var i = 1; i <= 5; i++) {
-            star = '☆';
-            if (i <= mark)
-                star = '⭐';
-            stars.push({
-                text: star,
-                callback_data: JSON.stringify({
-                    type: 'mark',
-                    mark: i,
-                    per: 'driv',
-                    // from: driv ,
-                    to: pass
-                })
-            })
-        }
+        // var stars = [];
+        // var star;
+        // for (var i = 1; i <= 5; i++) {
+        //     star = '☆';
+        //     if (i <= mark)
+        //         star = '⭐';
+        //     stars.push({
+        //         text: star,
+        //         callback_data: JSON.stringify({
+        //             type: 'mark',
+        //             mark: i,
+        //             per: 'driv',
+        //             // from: driv ,
+        //             to: pass
+        //         })
+        //     })
+        // }
         return {
             reply_markup: {
                 inline_keyboard: [
-                    stars,
+                    // stars,
                     [{
                         text: 'Поездка завершена',
                         callback_data: JSON.stringify({
@@ -134,6 +167,39 @@ module.exports = {
                     }]
                 ]
             }
+        }
+    },
+    getDriverStars(pass, driv, mark) {
+        var stars = [];
+        var star;
+        for (var i = 1; i <= 5; i++) {
+            star = '☆';
+            if (i <= mark)
+                star = '⭐';
+            stars.push({
+                text: star,
+                callback_data: JSON.stringify({
+                    type: 'mark',
+                    mark: i,
+                    per: 'driv',
+                    // from: driv ,
+                    to: pass
+                })
+            })
+        }
+        return {
+            inline_keyboard: [
+                stars,
+                [{
+                    text: 'Оценить',
+                    callback_data: JSON.stringify({
+                        type:'sndMark',
+                        mark: mark,
+                        id: pass,
+                        per: 'driv'
+                    })
+                }]
+            ]
         }
     }
 }
