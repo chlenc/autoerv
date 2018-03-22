@@ -376,7 +376,8 @@ bot.on('message', msg => {
     //application
     if (msg.text === kb.home.driver) {
         firebase.database().ref(`users/${chatId}`).once("value", function (snapshot) {
-            if(snapshot.val().driverInfo === undefined){
+            // console.log(snapshot.val().driverInfo)
+            if(snapshot.val().driverInfo === undefingied){
                 bot.sendMessage(chatId,'Введите пожалуйста слудующие данные:\n ФИО, марка, модель авто, номер авто',{
                     reply_markup: {
                                 force_reply: true
