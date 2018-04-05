@@ -290,7 +290,7 @@ bot.on('callback_query', query => {
     try {
         var data = JSON.parse(query.data)
         // console.log(JSON.stringify(query, null, 4))
-        console.log(data)
+        // console.log(data)
         if (data.type == 'get_order') {
             helpers.getOrder(bot, query, data)
         }

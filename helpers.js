@@ -211,10 +211,10 @@ module.exports = {
             if (query.from.id == passenger_id) {
                 bot.sendMessage(passenger_id, 'Вы не можете везти сами себя 🤦🏻‍♀️🤷🏻‍♀️🙅🏻‍♀️')
             } else {
-                // bot.editMessageText('Выполняется', {
-                //     chat_id: query.message.chat.id,
-                //     message_id: query.message.message_id
-                // })
+                bot.editMessageText('Выполняется', {
+                    chat_id: query.message.chat.id,
+                    message_id: query.message.message_id
+                })
                 try {
                     firebase.database().ref(`users/${passenger_id}`).once("value", function (snapshot) {
                         var user = snapshot.val();
@@ -238,7 +238,7 @@ module.exports = {
                                 driver: query.from
                             }
                         );
-                        //firebase.database().ref('users/' + passenger_id + '/order').remove();
+                        firebase.database().ref('users/' + passenger_id + '/order').remove();
                         bot.sendMessage(query.from.id, 'Пассажир ждет вас\n' +
                             `Aдрес отправления 🛫: ${start.address}\nАдрес прибытия 🛬` +
                             `: ${end.address} \nНомер пассажира: ${phone} \n\n` +
@@ -288,8 +288,8 @@ module.exports = {
             chat_id: data.country,
             message_id: data.msg_id
         })
-        // firebase.database().ref('users/' + query.from.id + '/order').remove();
-        // firebase.database().ref('orders/' + query.from.id).remove();
+        firebase.database().ref('users/' + query.from.id + '/order').remove();
+        firebase.database().ref('orders/' + query.from.id).remove();
         bot.editMessageText('Заказ отменен', {
             chat_id: query.message.chat.id,
             message_id: query.message.message_id
