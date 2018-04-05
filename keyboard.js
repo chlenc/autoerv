@@ -11,6 +11,13 @@ module.exports = {
             //one_time_keyboard: true;
         }
     },
+    share: {
+        reply_markup: {
+            inline_keyboard: [
+                [kb.share]
+            ]
+        }
+    },
     askPhone: {
         reply_markup: {
             keyboard: [
@@ -22,19 +29,48 @@ module.exports = {
         reply_markup: {
             keyboard: [
                 [kb.askGeo],
+                //[kb.call_a_taxi.start],
+                [kb.goToHome]
+            ]
+        }
+    },
+    tryAskStartTaxiLocationAgain: {
+        reply_markup: {
+            keyboard: [
+                [kb.call_a_taxi.start],
+                //[kb.call_a_taxi.start],
+                [kb.goToHome]
+            ]
+        }
+    },
+    tryAskEndTaxiLocationAgain: {
+        reply_markup: {
+            keyboard: [
+                [kb.call_a_taxi.end],
+                //[kb.call_a_taxi.start],
+                [kb.goToHome]
+            ]
+        }
+    },
+    startSubmit: {
+        reply_markup: {
+            keyboard: [
+                [kb.call_a_taxi.end],
                 [kb.call_a_taxi.start],
                 [kb.goToHome]
             ]
         }
     },
-    askEndTaxiLocation: {
+    endSubmit: {
         reply_markup: {
             keyboard: [
+                [kb.call_a_taxi.confirm_end],
                 [kb.call_a_taxi.end],
                 [kb.goToHome]
             ]
         }
     },
+    askEndTaxiLocation: {},
     goToHome: {
         reply_markup: {
             keyboard: [
@@ -56,6 +92,27 @@ module.exports = {
                 [kb.call_a_taxi.yes_cancel],
                 [kb.call_a_taxi.no_cancel]
             ]
+        }
+    },
+    chennalReply(chatId) {
+        return {
+            reply_markup: {
+                inline_keyboard: [[kb.channelGetButton(chatId)]]
+            }
+        }
+    },
+    waitReply(value,temp){
+        return {
+            reply_markup: {
+                inline_keyboard: [[ {
+                    text: 'Отменить ❌',
+                    callback_data: JSON.stringify({
+                        type: 'revoke_nd',
+                        country: temp,
+                        msg_id: value.message_id
+                    })
+                }]]
+            }
         }
     },
     getPassengerEndKey(pass, driv, mark) {
@@ -93,7 +150,8 @@ module.exports = {
                 ]
             }
         }
-    },
+    }
+    ,
     getPassengerStars(pass, driv, mark) {
         var stars = [];
         var star;
@@ -113,20 +171,21 @@ module.exports = {
             })
         }
         return {
-                inline_keyboard: [
-                    stars,
-                    [{
-                        text: 'Оценить',
-                        callback_data: JSON.stringify({
-                            type:'sndMark',
-                            mark: mark,
-                            id: driv,
-                            per: 'pass'
-                        })
-                    }]
-                ]
+            inline_keyboard: [
+                stars,
+                [{
+                    text: 'Оценить',
+                    callback_data: JSON.stringify({
+                        type: 'sndMark',
+                        mark: mark,
+                        id: driv,
+                        per: 'pass'
+                    })
+                }]
+            ]
         }
-    },
+    }
+    ,
     getDriverEndKey(pass, driv, mark) {
         // var stars = [];
         // var star;
@@ -168,7 +227,8 @@ module.exports = {
                 ]
             }
         }
-    },
+    }
+    ,
     getDriverStars(pass, driv, mark) {
         var stars = [];
         var star;
@@ -193,7 +253,7 @@ module.exports = {
                 [{
                     text: 'Оценить',
                     callback_data: JSON.stringify({
-                        type:'sndMark',
+                        type: 'sndMark',
                         mark: mark,
                         id: pass,
                         per: 'driv'

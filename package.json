@@ -16,6 +16,7 @@
     "koa-bodyparser": "^4.2.0",
     "koa-router": "^7.4.0",
     "node-telegram-bot-api": "^0.30.0",
+    "node-telegram-cache-chat-messages": "^1.3.0",
     "node-uber": "^2.0.0",
     "request": "^2.83.0"
   }
