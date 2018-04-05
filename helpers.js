@@ -183,10 +183,25 @@ module.exports = {
         firebase.database().ref(`users/${chatId}`).once("value", function (snapshot) {
             // console.log(snapshot.val().driverInfo)
             if (snapshot.val().driverInfo === undefined) {
-                bot.sendMessage(chatId, frases.driverDataAsk)
+                bot.sendMessage(chatId, 'Введите ФИО',{
+                    reply_markup:{
+                        force_reply: true
+                    }
+                })
             }
             else {
-                bot.sendMessage(chatId, frases.driver, keyboards.home)
+                if(snapshot.val().driverInfo.fio === undefined || snapshot.val().driverInfo.mark === undefined ||
+                    snapshot.val().driverInfo.model === undefined ||
+                    snapshot.val().driverInfo.gosNumber === undefined){
+                    bot.sendMessage(chatId, 'Введите ФИО',{
+                        reply_markup:{
+                            force_reply: true
+                        }
+                    })
+                }else {
+                    bot.sendMessage(chatId, frases.driver, keyboards.home)
+                }
+
             }
         }, function (errorObject) {
             console.log("The read failed: " + errorObject);
