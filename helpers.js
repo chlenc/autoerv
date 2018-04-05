@@ -224,7 +224,7 @@ module.exports = {
         var passenger_id = data.id;
         try {
             if (query.from.id == passenger_id) {
-                bot.sendMessage(passenger_id, 'Вы не можете везти сами себя 🤦🏻‍♀️🤷🏻‍♀️🙅🏻‍♀️')
+                bot.sendMessage(passenger_id, frases.driver_error)
             } else {
                 bot.editMessageText('Выполняется', {
                     chat_id: query.message.chat.id,
@@ -239,7 +239,7 @@ module.exports = {
                         var phone = user.phone_number;
                         var order = user.order;
                         if (order === null || order === undefined) {
-                            bot.sendMessage(query.from.id, 'Что-то пошло не так 😱', keyboards.goToHome);
+                            bot.sendMessage(query.from.id, frases.error_message, keyboards.goToHome);
                             return
                         }
                         var start = order.start_location;
@@ -314,7 +314,7 @@ module.exports = {
         firebase.database().ref(`orders/${data.id}`).once("value", function (snapshot) {
             var order = snapshot.val();
             if (order === null) {
-                bot.sendMessage(query.from.id, 'Что-то пошло не так 😱', keyboards.goToHome);
+                bot.sendMessage(query.from.id, frases.error_message, keyboards.goToHome);
                 return
             }
             bot.editMessageText('Заказ отменен', {
@@ -335,7 +335,7 @@ module.exports = {
         firebase.database().ref(`orders/${data.id}`).once("value", function (snapshot) {
             var order = snapshot.val();
             if (order === null) {
-                bot.sendMessage(query.from.id, 'Что-то пошло не так 😱', keyboards.goToHome);
+                bot.sendMessage(query.from.id, frases.error_message, keyboards.goToHome);
                 return
             }
             bot.editMessageText(`Поездка завершена\nК оплате ${order.order.price.high}₽ - ${order.order.price.low}₽.\n` +

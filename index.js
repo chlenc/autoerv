@@ -84,7 +84,7 @@ bot.on('message', msg => {
         else if (msg.text === kb.call_a_taxi.end) {
             bot.sendMessage(chatId, frases.call_a_taxi.askEndLoc, keyboards.goToHome);
         }
-        else if (msg.text === kb.call_a_taxi.confirm_end) {
+        else if (msg.text === kb.call_a_taxi.confirm_end || msg.text === kb.call_a_taxi.no_cancel) {
             helpers.getResults(bot, chatId)
         }
         else if (msg.text === kb.call_a_taxi.yes_cancel) {
