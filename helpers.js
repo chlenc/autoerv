@@ -20,7 +20,7 @@ var uber = new Uber({
 module.exports = {
     getLocationByAddress(address, callback) {
         address = cyrill_to_latin(address) + ', Moscow';
-        const url = "https://maps.googleapis.com/maps/api/geocode/json?address=" + address + "&key=AIzaSyAiNQKRVND4M5gH_DCVbYwYV3Ve-04pLBE";
+        const url = "https://maps.googleapis.com/maps/api/geocode/json?address=" + address + "&key=AIzaSyDoHcvXO6EjtHCQhpIgKaHhIlCxrztTv94";
         request(url, (error, response, body) => {
             try {
                 if (!error && response.statusCode === 200) {
@@ -40,7 +40,7 @@ module.exports = {
     },
     getAddressByLocation(location, callback) {
         location = location.lat + ',' + location.lng;
-        const url = "https://maps.googleapis.com/maps/api/geocode/json?language=ru&latlng=" + location + "&key=AIzaSyAiNQKRVND4M5gH_DCVbYwYV3Ve-04pLBE";
+        const url = "https://maps.googleapis.com/maps/api/geocode/json?language=ru&latlng=" + location + "&key=AIzaSyDoHcvXO6EjtHCQhpIgKaHhIlCxrztTv94";
 
         request(url, (error, response, body) => {
             try {
@@ -151,22 +151,24 @@ module.exports = {
                         var start = order.start_location;
                         var end = order.end_location;
                         var message = frases.getOrderInfo(start.address, end.address, order.price.low, order.price.high);
-                        bot.sendMessage(temp, message, keyboards.chennalReply(chatId))
-                            .then(function (value) {
-                                bot.sendMessage(chatId, frases.call_a_taxi.confirm_order, keyboards.home);
-                                bot.sendMessage(chatId, frases.waitMessage, {
-                                    reply_markup: {
-                                        inline_keyboard: [[{
-                                            text: 'Отменить ❌',
-                                            callback_data: JSON.stringify({
-                                                type: 'revoke_nd',
-                                                country: temp,
-                                                msg_id: value.message_id
-                                            })
-                                        }]]
-                                    }
+                        getUserMark(chatId, function(mark) {
+                            bot.sendMessage(temp, message + '\n' + mark, keyboards.chennalReply(chatId))
+                                .then(function (value) {
+                                    bot.sendMessage(chatId, frases.call_a_taxi.confirm_order, keyboards.home);
+                                    bot.sendMessage(chatId, frases.waitMessage, {
+                                        reply_markup: {
+                                            inline_keyboard: [[{
+                                                text: 'Отменить ❌',
+                                                callback_data: JSON.stringify({
+                                                    type: 'r',
+                                                    c: temp,
+                                                    id: value.message_id
+                                                })
+                                            }]]
+                                        }
+                                    });
                                 });
-                            });
+                        })
                         return
                     }
                 }
@@ -183,22 +185,22 @@ module.exports = {
         firebase.database().ref(`users/${chatId}`).once("value", function (snapshot) {
             // console.log(snapshot.val().driverInfo)
             if (snapshot.val().driverInfo === undefined) {
-                bot.sendMessage(chatId, 'Введите ФИО',{
-                    reply_markup:{
+                bot.sendMessage(chatId, 'Введите ФИО', {
+                    reply_markup: {
                         force_reply: true
                     }
                 })
             }
             else {
-                if(snapshot.val().driverInfo.fio === undefined || snapshot.val().driverInfo.mark === undefined ||
+                if (snapshot.val().driverInfo.fio === undefined || snapshot.val().driverInfo.mark === undefined ||
                     snapshot.val().driverInfo.model === undefined ||
-                    snapshot.val().driverInfo.gosNumber === undefined){
-                    bot.sendMessage(chatId, 'Введите ФИО',{
-                        reply_markup:{
+                    snapshot.val().driverInfo.gosNumber === undefined) {
+                    bot.sendMessage(chatId, 'Введите ФИО', {
+                        reply_markup: {
                             force_reply: true
                         }
                     })
-                }else {
+                } else {
                     bot.sendMessage(chatId, frases.driver, keyboards.home)
                 }
 
@@ -219,17 +221,13 @@ module.exports = {
             }
         )
     },
-    //
     getOrder(bot, query, data) {
         var passenger_id = data.id;
         try {
+            // console.log(query.from.id)
             if (query.from.id == passenger_id) {
                 bot.sendMessage(passenger_id, frases.driver_error)
             } else {
-                bot.editMessageText('Выполняется', {
-                    chat_id: query.message.chat.id,
-                    message_id: query.message.message_id
-                })
                 try {
                     firebase.database().ref(`users/${passenger_id}`).once("value", function (snapshot) {
                         var user = snapshot.val();
@@ -244,49 +242,59 @@ module.exports = {
                         }
                         var start = order.start_location;
                         var end = order.end_location;
-                        firebase.database().ref('orders/' + passenger_id).set(
-                            {
-                                phone_number: phone,
-                                first_name: user.first_name,
-                                order: user.order,
-                                date: new Date(),
-                                driver: query.from
-                            }
-                        );
-                        firebase.database().ref('users/' + passenger_id + '/order').remove();
-                        bot.sendMessage(query.from.id, 'Пассажир ждет вас\n' +
-                            `Aдрес отправления 🛫: ${start.address}\nАдрес прибытия 🛬` +
-                            `: ${end.address} \nНомер пассажира: ${phone} \n\n` +
-                            `Стоимость поездки: ${order.price.low}₽ - ${order.price.high}₽`
-                            , keyboards.getDriverEndKey(passenger_id, query.from.id, 0))
-                            .then(msg => {
-                                firebase.database().ref('orders/' + passenger_id + '/revoke/passenger').update({
-                                    message_id: msg.message_id,
-                                    chat_id: msg.chat.id
-                                })
-                            })
 
                         firebase.database().ref(`users/${query.from.id}`).once("value", function (snapshot) {
-                            if(snapshot.val() !== null && snapshot.val().driverInfo !== undefined){
+                            if (snapshot.val() !== null && snapshot.val().driverInfo !== undefined) {
                                 var driverInfo = snapshot.val().driverInfo;
-                                bot.sendMessage(passenger_id, 'Ждите водителя\n' +
-                                    `ФИО ${driverInfo.fio}\nМарка ${driverInfo.mark}\n Модель ${driverInfo.model}\n Госномер ${driverInfo.gosNumber}\n`+
-                                    `Aдрес отправления 🛫: ${start.address}\nАдрес прибытия 🛬` +
-                                    `: ${end.address} \nНомер водителя: ${snapshot.val().phone_number} \n\n` +
-                                    `Стоимость поездки: ${order.price.low}₽ - ${order.price.high}₽`
-                                    , keyboards.getPassengerEndKey(passenger_id, query.from.id, 0)).then(msg => {
-                                    firebase.database().ref('orders/' + passenger_id + '/revoke/driver').update({
+
+                                getUserMark(query.from.id, function(mark){
+                                    bot.sendMessage(passenger_id, 'Ждите водителя\n' +
+                                        `ФИО ${driverInfo.fio}\nМарка ${driverInfo.mark}\n Модель ${driverInfo.model}\n Госномер ${driverInfo.gosNumber}\n` +
+                                        `Aдрес отправления 🛫: ${start.address}\nАдрес прибытия 🛬` +
+                                        `: ${end.address} \nНомер водителя: ${snapshot.val().phone_number} \n\n` +
+                                        `Стоимость поездки: ${order.price.low}₽`+'\n'+mark
+                                        , keyboards.getPassengerEndKey(passenger_id, query.from.id, 0)).then(msg => {
+                                        firebase.database().ref('orders/' + passenger_id + '/revoke/driver').update({
+                                        message_id: msg.message_id,
+                                        chat_id: msg.chat.id
+                                       })
+                                    })
+                                });
+                                getUserMark(passenger_id, function(mark){
+                                    bot.sendMessage(query.from.id, 'Пассажир ждет вас\n' +
+                                        `Aдрес отправления 🛫: ${start.address}\nАдрес прибытия 🛬` +
+                                        `: ${end.address} \nНомер пассажира: ${phone} \n\n` +
+                                        `Стоимость поездки: ${order.price.low}₽`+'\n'+mark
+                                        , keyboards.getDriverEndKey(passenger_id, query.from.id, 0))
+                                        .then(msg => {
+                                        firebase.database().ref('orders/' + passenger_id + '/revoke/passenger').update({
                                         message_id: msg.message_id,
                                         chat_id: msg.chat.id
                                     })
-                                });
-                            }
+                                })
+                                })
 
-                        }, function (errorObject) {
-                            console.log("The read failed: " + errorObject);
-                        });
-                    }, function (errorObject) {
-                        console.log("The read failed: " + errorObject);
+                                firebase.database().ref('orders/' + passenger_id).set(
+                                    {
+                                        phone_number: phone,
+                                        first_name: user.first_name,
+                                        order: user.order,
+                                        date: new Date(),
+                                        driver: query.from
+                                    }
+                                );
+                                firebase.database().ref('users/' + passenger_id + '/order').remove();
+                                bot.editMessageText('Выполняется', {
+                                    chat_id: query.message.chat.id,
+                                    message_id: query.message.message_id
+                                })
+
+                                return false
+                            } else {
+                                bot.sendMessage(query.from.id,'Сначала вам нужно добавить данные о водителе')
+                                return
+                            }
+                        })
                     });
                 } catch (e) {
                     console.log(e.toString())
@@ -298,10 +306,89 @@ module.exports = {
         } catch (e) {
         }
     },
+    //
+    // getOrder(bot, query, data) {
+    //     var passenger_id = data.id;
+    //     try {
+    //         if (query.from.id == passenger_id) {
+    //             bot.sendMessage(passenger_id, frases.driver_error)
+    //         } else {
+    //             bot.editMessageText('Выполняется', {
+    //                 chat_id: query.message.chat.id,
+    //                 message_id: query.message.message_id
+    //             })
+    //             try {
+    //                 firebase.database().ref(`users/${passenger_id}`).once("value", function (snapshot) {
+    //                     var user = snapshot.val();
+    //                     if (user === null)
+    //                         return;
+    //
+    //                     var phone = user.phone_number;
+    //                     var order = user.order;
+    //                     if (order === null || order === undefined) {
+    //                         bot.sendMessage(query.from.id, frases.error_message, keyboards.goToHome);
+    //                         return
+    //                     }
+    //                     var start = order.start_location;
+    //                     var end = order.end_location;
+    //                     firebase.database().ref('orders/' + passenger_id).set(
+    //                         {
+    //                             phone_number: phone,
+    //                             first_name: user.first_name,
+    //                             order: user.order,
+    //                             date: new Date(),
+    //                             driver: query.from
+    //                         }
+    //                     );
+    //                     firebase.database().ref('users/' + passenger_id + '/order').remove();
+    //                     bot.sendMessage(query.from.id, 'Пассажир ждет вас\n' +
+    //                         `Aдрес отправления 🛫: ${start.address}\nАдрес прибытия 🛬` +
+    //                         `: ${end.address} \nНомер пассажира: ${phone} \n\n` +
+    //                         `Стоимость поездки: ${order.price.low}₽`
+    //                         , keyboards.getDriverEndKey(passenger_id, query.from.id, 0))
+    //                         .then(msg => {
+    //                             firebase.database().ref('orders/' + passenger_id + '/revoke/passenger').update({
+    //                                 message_id: msg.message_id,
+    //                                 chat_id: msg.chat.id
+    //                             })
+    //                         })
+    //
+    //                     firebase.database().ref(`users/${query.from.id}`).once("value", function (snapshot) {
+    //                         if (snapshot.val() !== null && snapshot.val().driverInfo !== undefined) {
+    //                             var driverInfo = snapshot.val().driverInfo;
+    //                             bot.sendMessage(passenger_id, 'Ждите водителя\n' +
+    //                                 `ФИО ${driverInfo.fio}\nМарка ${driverInfo.mark}\n Модель ${driverInfo.model}\n Госномер ${driverInfo.gosNumber}\n` +
+    //                                 `Aдрес отправления 🛫: ${start.address}\nАдрес прибытия 🛬` +
+    //                                 `: ${end.address} \nНомер водителя: ${snapshot.val().phone_number} \n\n` +
+    //                                 `Стоимость поездки: ${order.price.low}₽`
+    //                                 , keyboards.getPassengerEndKey(passenger_id, query.from.id, 0)).then(msg => {
+    //                                 firebase.database().ref('orders/' + passenger_id + '/revoke/driver').update({
+    //                                     message_id: msg.message_id,
+    //                                     chat_id: msg.chat.id
+    //                                 })
+    //                             });
+    //                         }
+    //
+    //                     }, function (errorObject) {
+    //                         console.log("The read failed: " + errorObject);
+    //                     });
+    //                 }, function (errorObject) {
+    //                     console.log("The read failed: " + errorObject);
+    //                 });
+    //             } catch (e) {
+    //                 console.log(e.toString())
+    //             }
+    //
+    //         }
+    //
+    //         // firebase.database.ref
+    //     } catch (e) {
+    //     }
+    // },
     revokeND(bot, query, data) {
         bot.editMessageText('Пассажир отменил заказ', {
-            chat_id: data.country,
-            message_id: data.msg_id
+            chat_id: data.c,
+            message_id: data.id
         })
         firebase.database().ref('users/' + query.from.id + '/order').remove();
         firebase.database().ref('orders/' + query.from.id).remove();
@@ -314,6 +401,10 @@ module.exports = {
         firebase.database().ref(`orders/${data.id}`).once("value", function (snapshot) {
             var order = snapshot.val();
             if (order === null) {
+                bot.sendMessage(query.from.id, frases.error_message, keyboards.goToHome);
+                return
+            }
+            if (order.revoke.driver === undefined || order.revoke.passenger === undefined) {
                 bot.sendMessage(query.from.id, frases.error_message, keyboards.goToHome);
                 return
             }
@@ -331,20 +422,20 @@ module.exports = {
             firebase.database().ref(`orders/${data.id}`).remove()
         });
     },
-    complete(bot, query, data){
+    complete(bot, query, data) {
         firebase.database().ref(`orders/${data.id}`).once("value", function (snapshot) {
             var order = snapshot.val();
             if (order === null) {
                 bot.sendMessage(query.from.id, frases.error_message, keyboards.goToHome);
                 return
             }
-            bot.editMessageText(`Поездка завершена\nК оплате ${order.order.price.high}₽ - ${order.order.price.low}₽.\n` +
+            bot.editMessageText(`Поездка завершена\nК оплате ${order.order.price.low}₽.\n` +
                 'Пожалуйста, оцените поездку', {
                 chat_id: order.revoke.driver.chat_id,
                 message_id: order.revoke.driver.message_id,
                 reply_markup: keyboards.getDriverStars(order.revoke.passenger.chat_id, order.revoke.driver.message_id, 0)
             })
-            bot.editMessageText(`Поездка завершена\nК оплате ${order.order.price.high}₽ - ${order.order.price.low}₽.\n` +
+            bot.editMessageText(`Поездка завершена\nК оплате ${order.order.price.low}₽.\n` +
                 'Пожалуйста, оцените поездку', {
                 chat_id: order.revoke.passenger.chat_id,
                 message_id: order.revoke.passenger.message_id,
@@ -356,7 +447,7 @@ module.exports = {
             firebase.database().ref(`orders/${data.id}`).remove()
         });
     },
-    mark(bot,query,data){
+    mark(bot, query, data) {
         if (data.per === 'driv')
             var reply = keyboards.getDriverStars(data.to, query.from.id, data.mark);
         else
@@ -367,7 +458,7 @@ module.exports = {
             message_id: query.message.message_id
         })
     },
-    sendMark(bot,query,data){
+    sendMark(bot, query, data) {
         firebase.database().ref(`reviews/${data.id}/${new Date()}`).set({
             mark: data.mark,
             from: query.from.id,
@@ -380,14 +471,105 @@ module.exports = {
         })
     },
     echo() {
-        firebase.database().ref('countries/').update({
-            '@testxhannnnel': {//sdasdsadsad
-                id: '@testxhannnnel',
-                title: "Восточный административный округ",
-                url: 'https://t.me/testxhannnnel'
+        firebase.database().ref('reviews/28091441').once('value', function (snapshot) {
+            var data = snapshot.val()
+            if (data == null)
+                console.log('Оценок пока нет');
+            else {
+                var sum = 0;
+                var count = 0;
+                for (var temp in data) {
+                    sum += data[temp].mark;
+                    count++;
+                }
+                console.log('Оценка: '+(sum/count).toFixed(1))
             }
+
         })
     }
+
+    // firebase.database().ref('countries/').update({
+        //     '@CentralTaxiDistrict': {
+        //         id: '@CentralTaxiDistrict',
+        //         title: "Центральный административный округ",
+        //         url: 'https://t.me/joinchat/CentralTaxiDistrict'
+        //     },
+        //     '@NorthernTaxiDistrict': {
+        //         id: '@NorthernTaxiDistrict',
+        //         title: "Северный административный округ",
+        //         url: 'https://t.me/NorthernTaxiDistrict'
+        //     },
+        //     '@NorthEasternTaxiDistrict': {
+        //         id: '@NorthEasternTaxiDistrict',
+        //         title: "Северо-Восточный административный округ",
+        //         url: 'https://t.me/NorthEasternTaxiDistrict'
+        //     },
+        //     '@EasternTaxiDistrict': {
+        //         id: '@EasternTaxiDistrict',
+        //         title: "Восточный административный округ",
+        //         url: 'https://t.me/EasternTaxiDistrict'
+        //     },
+        //     '@SouthEasternTaxiDistrict': {
+        //         id: '@SouthEasternTaxiDistrict',
+        //         title: "Юго-Восточный административный округ",
+        //         url: 'https://t.me/SouthEasternTaxiDistrict'
+        //     },
+        //     '@SouthernTaxiDistrict': {
+        //         id: '@SouthernTaxiDistrict',
+        //         title: "Южный административный округ",
+        //         url: 'https://t.me/SouthernTaxiDistrict'
+        //     },
+        //     '@SouthWesternTaxiDistrict': {
+        //         id: '@SouthWesternTaxiDistrict',
+        //         title: "Юго-Западный административный округ",
+        //         url: 'https://t.me/SouthWesternTaxiDistrict'
+        //     },
+        //     '@WesternTaxiDistrict': {
+        //         id: '@WesternTaxiDistrict',
+        //         title: "Западный административный округ",
+        //         url: 'https://t.me/WesternTaxiDistrict'
+        //     },
+        //     '@NorthWesternTaxiDistrict': {
+        //         id: '@NorthWesternTaxiDistrict',
+        //         title: "Северо-Западный административный округ",
+        //         url: 'https://t.me/NorthWesternTaxiDistrict'
+        //     },
+        //     '@ZelenogradTaxiDistrict': {
+        //         id: '@ZelenogradTaxiDistrict',
+        //         title: "Зеленоградский административный округ",
+        //         url: 'https://t.me/ZelenogradTaxiDistrict'
+        //     },
+        //     '@NovomoskovskyTaxiDistrict': {
+        //         id: '@NovomoskovskyTaxiDistrict',
+        //         title: "Новомосковский административный округ",
+        //         url: 'https://t.me/NovomoskovskyTaxiDistrict'
+        //     },
+        //     '@TroitskTaxiDistrict': {
+        //         id: '@TroitskTaxiDistrict',
+        //         title: "Троицкий административный округ",
+        //         url: 'https://t.me/TroitskTaxiDistrict'
+        //     },
+        // })
+}
+
+function getUserMark(id,mark) {
+    // console.log(id)
+        firebase.database().ref('reviews/'+id).once('value', function (snapshot) {
+            var data = snapshot.val()
+            // console.log(data)
+            if (data == null)
+                mark('Оценок пока нет');
+            else {
+                var sum = 0;
+                var count = 0;
+                for (var temp in data) {
+                    sum += data[temp].mark;
+                    count++;
+                }
+                mark('Оценка: '+(sum/count).toFixed(1))
+            }
+
+        })
 }
 
 function removeOrder(chatId) {

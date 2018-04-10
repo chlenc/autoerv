@@ -42,7 +42,7 @@ bot.onText(/\/map/, msg => {
     bot.sendMessage(msg.chat.id, frases.driver, keyboards.home)
 })
 bot.onText(/\/echo/, msg => {
-    //helpers.echo()
+    helpers.echo()
 })
 
 
@@ -325,7 +325,7 @@ bot.on('callback_query', query => {
         if (data.type == 'get_order') {
             helpers.getOrder(bot, query, data)
         }
-        else if (data.type === 'revoke_nd') {
+        else if (data.type === 'r') {
             helpers.revokeND(bot, query, data)
         }
         else if (data.type == 'revoke') {
